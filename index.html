@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>G1 Scene-Aware Motion</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a screening-room column; each scene is one row of two synchronized-looking clips. */
+:root {
+  --bg: #f3f4f2; --panel: #ffffff; --fg: #17191c; --muted: #5d636b; --line: #d9dcd8;
+  --accent: #e2570f; --tag2: #1f5f8b;
+  --display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121416; --panel: #1b1e21; --fg: #eceeea; --muted: #a1a7ad; --line: #2c3034;
+  --accent: #ff7a33; --tag2: #6fb3e0; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121416; --panel: #1b1e21; --fg: #eceeea; --muted: #a1a7ad; --line: #2c3034;
+  --accent: #ff7a33; --tag2: #6fb3e0; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 48px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { display: grid; gap: 14px; margin-bottom: 40px; max-width: 72ch; }
+h1 { font: 600 clamp(30px, 4.4vw, 48px)/1.08 var(--display); margin: 0; letter-spacing: -.01em;
+  text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); font-size: 17px; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 6px;
+  font: 400 13px/1.4 var(--mono); color: var(--muted); }
+.legend b { font-weight: 500; color: var(--fg); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 8px;
+  vertical-align: 1px; }
+.d1 { background: var(--accent); } .d2 { background: var(--tag2); }
+.scene { display: grid; gap: 16px; padding-block: 28px; border-top: 1px solid var(--line); }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+h2 { font: 600 22px/1.2 var(--display); margin: 0; }
+.head p { margin: 0; color: var(--muted); min-width: 0; }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+  gap: 18px; }
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+.frame { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  overflow: hidden; aspect-ratio: 16 / 9; max-width: 100%; }
+video { display: block; width: 100%; height: 100%; object-fit: cover; background: #000; }
+figcaption { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline;
+  font: 400 13px/1.45 var(--mono); color: var(--muted); }
+.tag { font-weight: 500; color: var(--accent); }
+.stage2 .tag { color: var(--tag2); }
+.kind { color: var(--fg); font-family: var(--body); font-size: 14px; }
+.run { flex-basis: 100%; font-variant-numeric: tabular-nums; }
+header a { color: var(--fg); text-underline-offset: 3px; }
+a:focus-visible, video:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>Scene-aware motion on the G1</h1>
+    <p class="lede">The robot gets one simple command, walk forward at a set speed (or stand
+      still), and finds its own way past walls, cones, low ceilings and people. Each scene shows the same
+      command twice: first the planner's motion played on the robot without physics, then the
+      full system, where an RL tracking policy executes that motion under physics.</p>
+    <div class="legend">
+      <span><i class="dot d1"></i><b>Stage 1</b> planner only, kinematic</span>
+      <span><i class="dot d2"></i><b>Stage 2</b> planner + RL tracking policy, physics</span>
+      <span>Single runs, recorded at 50 fps</span>
+    </div>
+  </header>
+  <main>
+    <section class="scene" id="s0-free">
+      <div class="head"><h2>Open floor</h2><p>Free walking on a 2 m/s command.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S0_free.mp4" poster="posters/stage1_S0_free.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 12 s · 20.4 m · no contact</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S0_free.mp4" poster="posters/stage2_S0_free.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 12 s · 21.0 m · no fall · no contact</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s5-doors-busy">
+      <div class="head"><h2>Doorways with people crossing</h2><p>A wall with a 1.85 m and a 0.9 m door; ten people walk back and forth, six of them through the robot&#x27;s door.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S5_doors_busy.mp4" poster="posters/stage1_S5_doors_busy.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 12 s · 9.2 m · contact in 2% of frames</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S5_doors_busy.mp4" poster="posters/stage2_S5_doors_busy.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 12 s · 16.2 m · no fall · contact in 1% of frames</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s7-ceilings">
+      <div class="head"><h2>Low ceilings</h2><p>Overhead slabs low enough to force a crouch, then a crawl.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S7_ceilings.mp4" poster="posters/stage1_S7_ceilings.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 15 s · 7.8 m · contact in 1% of frames</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S7_ceilings.mp4" poster="posters/stage2_S7_ceilings.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 15 s · 5.7 m · no fall · no contact</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s8-crowd-dense">
+      <div class="head"><h2>Walking through a crowd</h2><p>Twenty people wander around a 12 m arena while the robot crosses it.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S8_crowd_dense.mp4" poster="posters/stage1_S8_crowd_dense.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 16 s · 12.5 m · no contact</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S8_crowd_dense.mp4" poster="posters/stage2_S8_crowd_dense.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 16 s · 13.2 m · no fall · no contact</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s9-approaching-four">
+      <div class="head"><h2>People walking at the robot</h2><p>The robot is told to stand still; four people walk straight at it from four directions, 3.5 s apart. The Stage 2 clip is the first contact-free run of 8 recorded.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S9_approaching_four.mp4" poster="posters/stage1_S9_approaching_four.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 18 s · 1.4 m · no contact</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S9_approaching_four.mp4" poster="posters/stage2_S9_approaching_four.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 18 s · 1.7 m · no fall · no contact</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s4-corridor-mid">
+      <div class="head"><h2>Corridor with an oncoming person</h2><p>A 1.2 m corridor with a person walking the other way.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S4_corridor_mid.mp4" poster="posters/stage1_S4_corridor_mid.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 20 s · 18.9 m · contact in 1% of frames</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S4_corridor_mid.mp4" poster="posters/stage2_S4_corridor_mid.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 20 s · 18.0 m · no fall · contact in 1% of frames</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s4-corridor-two">
+      <div class="head"><h2>Wider corridor, two oncoming people</h2><p>A 1.55 m corridor; two people walk the other way, 7 m apart, the first on the robot&#x27;s left and the second on its right. The Stage 2 clip is the first contact-free run of 8 recorded.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S4_corridor_two.mp4" poster="posters/stage1_S4_corridor_two.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 15 s · 13.8 m · no contact</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S4_corridor_two.mp4" poster="posters/stage2_S4_corridor_two.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 15 s · 13.8 m · no fall · no contact</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s2-cone-zigzag-door">
+      <div class="head"><h2>Cone slalom to a half-open door</h2><p>Cones in a 2.5 m corridor that ends at a partly closed door. Commanded at 1.0 m/s. The Stage 2 clip is the first of 12 recorded runs that reaches the door without contact; over 48 runs the full system reaches it in 21%.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S2_cone_zigzag_door.mp4" poster="posters/stage1_S2_cone_zigzag_door.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 22 s · 15.8 m · no contact · through the door</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S2_cone_zigzag_door.mp4" poster="posters/stage2_S2_cone_zigzag_door.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 22 s · 13.3 m · no fall · no contact · through the door</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s1-narrowing-corridor">
+      <div class="head"><h2>Narrowing corridor</h2><p>A corridor that narrows from 1.1 m to 0.39 m.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S1_narrowing_corridor.mp4" poster="posters/stage1_S1_narrowing_corridor.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 20 s · 23.2 m · contact in 38% of frames</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S1_narrowing_corridor.mp4" poster="posters/stage2_S1_narrowing_corridor.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 20 s · 15.2 m · no fall · contact in 9% of frames</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s3-cone-field">
+      <div class="head"><h2>Dense cone field</h2><p>221 cones, the stress test from the EMM paper.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S3_cone_field.mp4" poster="posters/stage1_S3_cone_field.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 25 s · 21.2 m · contact in 3% of frames</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S3_cone_field.mp4" poster="posters/stage2_S3_cone_field.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 25 s · 8.8 m · no fall · contact in 2% of frames</span></figcaption>
+        </figure></div>
+    </section>
+    <section class="scene" id="s10-random">
+      <div class="head"><h2>Random clutter and people</h2><p>Random cones, bollards, wall pieces and six people, different every run. The planner-only clip has the people but not the clutter, which is placed only in physics runs.</p></div>
+      <div class="pair">
+        <figure class="clip stage1">
+          <div class="frame"><video src="videos/stage1_S10_random.mp4" poster="posters/stage1_S10_random.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 1</span><span class="kind">Planner only · kinematic, no physics</span>
+            <span class="run">This run: 20 s · 31.6 m · no contact</span></figcaption>
+        </figure>
+        <figure class="clip stage2">
+          <div class="frame"><video src="videos/stage2_S10_random.mp4" poster="posters/stage2_S10_random.jpg"
+            muted loop playsinline preload="none" controls></video></div>
+          <figcaption><span class="tag">Stage 2</span><span class="kind">Planner + RL tracking policy · physics</span>
+            <span class="run">This run: 20 s · 28.5 m · no fall · contact in 1% of frames</span></figcaption>
+        </figure></div>
+    </section>
+  </main>
+</div>
+<script>
+// Play clips while they are on screen; leave them paused for reduced-motion viewers.
+(() => {
+  const vids = [...document.querySelectorAll("video")];
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) return;
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      const v = e.target;
+      if (e.isIntersecting) { v.preload = "auto"; v.play().catch(() => {}); }
+      else v.pause();
+    }
+  }, { threshold: 0.35 });
+  vids.forEach((v) => io.observe(v));
+})();
+</script>
+</body>
+</html>
